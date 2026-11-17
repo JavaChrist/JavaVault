@@ -1,0 +1,24 @@
+# Dépendances
+node_modules
+
+# Build
+dist
+dist-ssr
+*.local
+
+# Secrets — ne jamais committer
+.env
+.env.*
+!.env.example
+
+# Éditeurs / OS
+.DS_Store
+Thumbs.db
+*.log
+logs
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# PWA (généré)
+dev-dist

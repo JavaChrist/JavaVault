@@ -1,0 +1,351 @@
+/* Mise en page de l'application (shell déverrouillé + écran de verrouillage). */
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 650;
+  font-size: 1.05rem;
+}
+.app-brand img {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+}
+.app-header .search {
+  position: relative;
+  flex: 1;
+  max-width: 420px;
+}
+.app-header .search svg {
+  position: absolute;
+  left: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted-2);
+  pointer-events: none;
+}
+.app-header .search input {
+  padding-left: 2rem;
+}
+
+.sync-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.sync-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted-2);
+}
+.sync-dot.local {
+  background: var(--accent);
+}
+
+.app-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 0;
+}
+
+.projects-pane {
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.projects-pane .pane-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+.projects-pane .pane-head h3 {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.project-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem;
+  overflow: auto;
+  flex: 1;
+}
+.project-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.project-item:hover {
+  background: var(--surface-2);
+}
+.project-item[aria-selected="true"] {
+  background: var(--accent-soft);
+  border-color: rgba(34, 211, 238, 0.3);
+}
+.project-item .name {
+  font-weight: 550;
+}
+.project-item .meta {
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+.content-pane {
+  overflow: auto;
+  padding: 1.1rem 1.2rem;
+  min-height: 0;
+}
+.content-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.content-head h2 {
+  font-size: 1.3rem;
+}
+.content-actions {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.rubric-filter {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.rubric-group {
+  margin-bottom: 1.4rem;
+}
+.rubric-group h4 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin: 0 0 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.rubric-group h4::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.entry-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 0.75rem 0.85rem;
+  margin-bottom: 0.65rem;
+}
+.entry-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+}
+.entry-name {
+  font-weight: 600;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+  font-size: 0.9rem;
+  word-break: break-all;
+}
+.entry-note {
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+
+.secret-value {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.5rem;
+}
+.secret-content {
+  flex: 1;
+  margin: 0;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 220px;
+  overflow: auto;
+  color: var(--muted);
+}
+.secret-content.revealed {
+  color: var(--text);
+}
+.secret-actions {
+  display: flex;
+  gap: 0.15rem;
+  align-self: flex-start;
+}
+
+.passphrase-input {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+.passphrase-input input {
+  flex: 1;
+}
+
+/* Écran de verrouillage */
+.lock-screen {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.lock-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.6rem;
+}
+.lock-card .brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.3rem;
+  text-align: center;
+}
+.lock-card .brand img {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+}
+.lock-card h1 {
+  font-size: 1.4rem;
+}
+.inline-error {
+  color: var(--danger);
+  font-size: 0.84rem;
+  margin-top: 0.5rem;
+}
+
+/* Aperçu d'import */
+.preview-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.preview-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.6rem;
+  background: var(--surface-2);
+}
+.preview-row.dup {
+  border-color: rgba(251, 191, 36, 0.4);
+}
+.preview-name {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+  font-size: 0.85rem;
+  word-break: break-all;
+}
+.preview-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.preview-controls select {
+  width: auto;
+  min-width: 140px;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  padding: 3rem 1rem;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.section-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 1rem 0;
+}
+
+.kv {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.kv b {
+  color: var(--text);
+  font-weight: 550;
+}
+
+/* Responsive : pile verticale sur mobile, sans défilement horizontal. */
+@media (max-width: 720px) {
+  .app-body {
+    grid-template-columns: 1fr;
+  }
+  .projects-pane {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    max-height: 38vh;
+  }
+  .app-header .search {
+    max-width: none;
+  }
+  .app-brand span.full {
+    display: none;
+  }
+}
