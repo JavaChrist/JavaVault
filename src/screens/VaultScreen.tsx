@@ -24,6 +24,7 @@ import { RubricModal } from "./RubricModal";
 import { SyncIndicator } from "@/sync/SyncIndicator";
 import { ConflictModal } from "@/sync/ConflictModal";
 import { useSync } from "@/sync/SyncContext";
+import { classifyNameWithRubrics } from "@/vault/classify";
 import { newId, type Project, type Rubric, type VaultEntry } from "@/vault/types";
 
 type ModalState =
@@ -314,6 +315,36 @@ export function VaultScreen() {
     toast.show("Rubrique créée", "success");
   };
 
+  // Reclasse les entrées du projet selon les rubriques (règles + rubriques
+  // personnalisées). Ne déplace jamais une entrée vers « Autres » : on ne touche
+  // qu'aux entrées pour lesquelles une rubrique pertinente est trouvée.
+  const reanalyze = async () => {
+    if (!selected) return;
+    const now = Date.now();
+    const plan = selected.entries
+      .filter((e) => e.kind !== "json")
+      .map((e) => ({ entry: e, proposal: classifyNameWithRubrics(e.name, rubrics) }))
+      .filter((c) => c.proposal !== "Autres" && c.proposal !== c.entry.rubric);
+    if (plan.length === 0) {
+      toast.show("Aucune entrée à reclasser", "info");
+      return;
+    }
+    const target = new Map(plan.map((c) => [c.entry.id, c.proposal]));
+    await update((v) => {
+      const p = v.projects.find((x) => x.id === selected.id);
+      if (!p) return;
+      for (const e of p.entries) {
+        const proposal = target.get(e.id);
+        if (proposal && proposal !== e.rubric) {
+          e.rubric = proposal;
+          e.updatedAt = now;
+        }
+      }
+      p.updatedAt = now;
+    });
+    toast.show(`${plan.length} entrée(s) reclassée(s)`, "success");
+  };
+
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -513,6 +544,14 @@ export function VaultScreen() {
                   onClick={() => setModal({ type: "rubric" })}
                 >
                   <PlusIcon size={14} /> Rubrique
+                </button>
+                <button
+                  className="chip"
+                  style={{ marginLeft: "auto" }}
+                  title="Reclasser les entrées selon les rubriques (y compris les nouvelles)"
+                  onClick={reanalyze}
+                >
+                  Analyser
                 </button>
               </div>
 

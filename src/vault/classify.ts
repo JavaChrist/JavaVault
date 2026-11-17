@@ -89,6 +89,30 @@ export function classifyName(name: string): Rubric {
   return "Autres";
 }
 
+/**
+ * Classification enrichie prenant en compte les rubriques de l'utilisateur.
+ *
+ * Priorité aux rubriques PERSONNALISÉES (hors rubriques par défaut) : si le nom
+ * de la variable contient le libellé de la rubrique comme jeton (ex. rubrique
+ * « Clerk » ↔ `CLERK_SECRET_KEY`), on l'y classe. Sinon, on applique les règles
+ * par défaut (`classifyName`). Jeton minimum 3 caractères pour éviter les faux
+ * positifs (ex. « API »).
+ */
+export function classifyNameWithRubrics(name: string, rubrics: Rubric[]): Rubric {
+  const normalized = normalizeName(name);
+  const original = name.toUpperCase();
+  for (const rubric of rubrics) {
+    if (rubric === "Autres" || isKnownRubric(rubric)) continue;
+    const token = rubric.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (token.length < 3) continue;
+    const re = new RegExp(`(^|[^A-Z0-9])${token}([^A-Z0-9]|$)`);
+    if (normalized.startsWith(token) || re.test(normalized) || re.test(original)) {
+      return rubric;
+    }
+  }
+  return classifyName(name);
+}
+
 /** Propose une rubrique pour un document JSON d'après son contenu. */
 export function classifyJson(fileName: string, content: string): Rubric {
   const haystack = `${fileName}\n${content}`.toLowerCase();
