@@ -21,7 +21,6 @@ export function PwaUpdater() {
   const {
     offlineReady: [offlineReady, setOfflineReady],
     needRefresh: [needRefresh, setNeedRefresh],
-    updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(_swUrl, registration) {
       if (!registration) return;
@@ -52,8 +51,7 @@ export function PwaUpdater() {
   if (!needRefresh) return null;
 
   const applyUpdate = () => {
-    // Idempotent : un seul passage, pour éviter les rechargements multiples
-    // (cause de la page blanche observée) si l'utilisateur clique plusieurs fois.
+    // Idempotent : un seul passage (évite les rechargements multiples).
     if (applying) return;
     setApplying(true);
     // Sécurité : on verrouille le coffre avant le rechargement de la page.
@@ -62,11 +60,38 @@ export function PwaUpdater() {
     } catch {
       /* lock ne doit jamais empêcher la mise à jour */
     }
-    // Active le nouveau SW (SKIP_WAITING). Le rechargement est déclenché UNE
-    // seule fois par `controllerchange` (clientsClaim fait prendre le contrôle
-    // au nouveau SW). Pas de reload « en aveugle » : il rechargeait parfois des
-    // assets déjà purgés → page blanche.
-    void updateServiceWorker(true);
+    // Rechargement DÉTERMINISTE, indépendant de workbox-window (dont le reload
+    // conditionné à `isUpdate` ne se déclenche pas toujours en PWA installée).
+    // Une seule recharge grâce à la garde `reloaded`, pour éviter la page blanche.
+    let reloaded = false;
+    const doReload = () => {
+      if (reloaded) return;
+      reloaded = true;
+      window.location.reload();
+    };
+    void (async () => {
+      try {
+        const reg = await navigator.serviceWorker.getRegistration();
+        // On recharge dès que le nouveau SW prend le contrôle de la page.
+        navigator.serviceWorker.addEventListener("controllerchange", doReload, {
+          once: true,
+        });
+        if (reg?.waiting) {
+          // Demande au worker en attente de s'activer (il écoute SKIP_WAITING).
+          reg.waiting.postMessage({ type: "SKIP_WAITING" });
+          // Repli : si le changement de contrôleur n'arrive pas (cas limite),
+          // on recharge quand même après un délai confortable (le nouveau SW
+          // est déjà installé, donc pas de ressource manquante).
+          window.setTimeout(doReload, 4000);
+        } else {
+          // Aucun worker en attente : la nouvelle version est déjà active,
+          // un simple rechargement suffit.
+          doReload();
+        }
+      } catch {
+        doReload();
+      }
+    })();
   };
 
   return (
