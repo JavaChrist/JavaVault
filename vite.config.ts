@@ -29,16 +29,15 @@ export default defineConfig({
         clientsClaim: true,
         // Ne jamais intercepter/mettre en cache des requêtes dynamiques.
         navigateFallbackDenylist: [/^\/api\//],
-        // Ne jamais mettre en cache les appels Firebase (Auth/Firestore).
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) =>
-              /(^https:\/\/)([a-z0-9-]+\.)?(googleapis|firebaseio|firebaseapp|firebase|gstatic)\.com/.test(
-                url.href,
-              ),
-            handler: "NetworkOnly",
-          },
-        ],
+        // IMPORTANT : on ne déclare AUCUNE route runtime pour Firebase.
+        // Les appels Auth/Firestore ne doivent ni être mis en cache, ni même
+        // transiter par le service worker. En particulier, la connexion de
+        // streaming permanente de Firestore (onSnapshot), si elle passait par
+        // le SW, empêcherait `clients.claim()` de prendre le contrôle lors d'une
+        // mise à jour (requête « in-flight » jamais terminée) → le rechargement
+        // ne se déclenchait pas quand l'utilisateur était synchronisé.
+        // Sans route, ces requêtes cross-origin sont gérées normalement par le
+        // navigateur, hors du périmètre du SW.
       },
       devOptions: {
         // Permet de tester l'enregistrement du SW en développement.
