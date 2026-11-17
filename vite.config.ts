@@ -19,9 +19,14 @@ export default defineConfig({
         // Purge les anciens caches applicatifs lors de l'activation d'une
         // nouvelle version (IndexedDB et le coffre ne sont PAS concernés).
         cleanupOutdatedCaches: true,
-        // Mode « prompt » : ne pas prendre le contrôle sans action utilisateur.
+        // Mode « prompt » : le nouveau SW RESTE en attente (skipWaiting:false)
+        // tant que l'utilisateur n'a pas cliqué « Mettre à jour ». À ce moment,
+        // le message SKIP_WAITING l'active ; clientsClaim:true lui fait alors
+        // prendre le contrôle de la page ouverte → `controllerchange` →
+        // rechargement automatique. Sans clientsClaim, le bouton ne rechargeait
+        // pas (le SW s'activait mais ne contrôlait pas la fenêtre courante).
         skipWaiting: false,
-        clientsClaim: false,
+        clientsClaim: true,
         // Ne jamais intercepter/mettre en cache des requêtes dynamiques.
         navigateFallbackDenylist: [/^\/api\//],
         // Ne jamais mettre en cache les appels Firebase (Auth/Firestore).

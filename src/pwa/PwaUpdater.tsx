@@ -52,9 +52,17 @@ export function PwaUpdater() {
 
   const applyUpdate = () => {
     // Sécurité : on verrouille le coffre avant le rechargement de la page.
-    lock();
-    // Recharge avec la nouvelle version (skipWaiting + reload gérés ici).
+    try {
+      lock();
+    } catch {
+      /* lock ne doit jamais empêcher la mise à jour */
+    }
+    // Active le nouveau SW (SKIP_WAITING) ; le rechargement est déclenché par
+    // `controllerchange` une fois le nouveau SW aux commandes (clientsClaim).
     void updateServiceWorker(true);
+    // Filet de sécurité : si `controllerchange` ne survient pas rapidement,
+    // on force le rechargement (au pire, il recharge la version courante).
+    window.setTimeout(() => window.location.reload(), 3000);
   };
 
   return (
