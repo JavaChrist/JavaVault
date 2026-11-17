@@ -72,22 +72,24 @@ export function PwaUpdater() {
     void (async () => {
       try {
         const reg = await navigator.serviceWorker.getRegistration();
-        // On recharge dès que le nouveau SW prend le contrôle de la page.
+        // Déclencheur n°1 : le nouveau SW prend le contrôle de la page.
         navigator.serviceWorker.addEventListener("controllerchange", doReload, {
           once: true,
         });
-        if (reg?.waiting) {
-          // Demande au worker en attente de s'activer (il écoute SKIP_WAITING).
-          reg.waiting.postMessage({ type: "SKIP_WAITING" });
-          // Repli : si le changement de contrôleur n'arrive pas (cas limite),
-          // on recharge quand même après un délai confortable (le nouveau SW
-          // est déjà installé, donc pas de ressource manquante).
-          window.setTimeout(doReload, 4000);
-        } else {
-          // Aucun worker en attente : la nouvelle version est déjà active,
-          // un simple rechargement suffit.
-          doReload();
+        const sw = reg?.waiting ?? reg?.installing ?? null;
+        if (sw) {
+          // Déclencheur n°2 : le worker passe à l'état « activated ».
+          const onState = () => {
+            if (sw.state === "activated") doReload();
+          };
+          sw.addEventListener("statechange", onState);
+          if (sw.state === "activated") doReload();
+          // Demande au worker de s'activer (il écoute le message SKIP_WAITING).
+          sw.postMessage({ type: "SKIP_WAITING" });
         }
+        // Déclencheur n°3 (repli) : rechargement après un délai confortable si
+        // rien n'a abouti. Le nouveau SW est déjà installé → pas d'asset manquant.
+        window.setTimeout(doReload, 5000);
       } catch {
         doReload();
       }
