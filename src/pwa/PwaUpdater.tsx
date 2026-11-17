@@ -7,7 +7,7 @@
 //   recharge. Rien n'est rechargé pendant une saisie/un import/une synchro sans
 //   action explicite de l'utilisateur.
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import { Modal } from "@/components/Modal";
 import { useToast } from "@/components/ToastProvider";
@@ -16,6 +16,7 @@ import { useVault } from "@/vault/VaultContext";
 export function PwaUpdater() {
   const toast = useToast();
   const { lock } = useVault();
+  const [applying, setApplying] = useState(false);
 
   const {
     offlineReady: [offlineReady, setOfflineReady],
@@ -51,18 +52,21 @@ export function PwaUpdater() {
   if (!needRefresh) return null;
 
   const applyUpdate = () => {
+    // Idempotent : un seul passage, pour éviter les rechargements multiples
+    // (cause de la page blanche observée) si l'utilisateur clique plusieurs fois.
+    if (applying) return;
+    setApplying(true);
     // Sécurité : on verrouille le coffre avant le rechargement de la page.
     try {
       lock();
     } catch {
       /* lock ne doit jamais empêcher la mise à jour */
     }
-    // Active le nouveau SW (SKIP_WAITING) ; le rechargement est déclenché par
-    // `controllerchange` une fois le nouveau SW aux commandes (clientsClaim).
+    // Active le nouveau SW (SKIP_WAITING). Le rechargement est déclenché UNE
+    // seule fois par `controllerchange` (clientsClaim fait prendre le contrôle
+    // au nouveau SW). Pas de reload « en aveugle » : il rechargeait parfois des
+    // assets déjà purgés → page blanche.
     void updateServiceWorker(true);
-    // Filet de sécurité : si `controllerchange` ne survient pas rapidement,
-    // on force le rechargement (au pire, il recharge la version courante).
-    window.setTimeout(() => window.location.reload(), 3000);
   };
 
   return (
@@ -73,11 +77,20 @@ export function PwaUpdater() {
       onClose={() => setNeedRefresh(false)}
       footer={
         <>
-          <button type="button" onClick={() => setNeedRefresh(false)}>
+          <button
+            type="button"
+            onClick={() => setNeedRefresh(false)}
+            disabled={applying}
+          >
             Plus tard
           </button>
-          <button type="button" className="btn-primary" onClick={applyUpdate}>
-            Mettre à jour
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={applyUpdate}
+            disabled={applying}
+          >
+            {applying ? "Mise à jour…" : "Mettre à jour"}
           </button>
         </>
       }
