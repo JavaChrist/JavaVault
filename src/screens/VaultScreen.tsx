@@ -44,9 +44,8 @@ export function VaultScreen() {
   const projects = useMemo(() => data?.projects ?? [], [data]);
   const rubrics = useMemo(() => data?.rubrics ?? [], [data]);
 
-  const [selectedId, setSelectedId] = useState<string | null>(
-    projects[0]?.id ?? null,
-  );
+  // Par défaut : page d'accueil « lanceur » (aucun projet ouvert).
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [rubricFilter, setRubricFilter] = useState<Rubric | null>(null);
   const [modal, setModal] = useState<ModalState>(null);
