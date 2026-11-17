@@ -365,15 +365,51 @@ button.app-brand:active:not(:disabled) {
   width: 100%;
   max-width: 920px;
 }
+.launcher-cell {
+  position: relative;
+  display: flex;
+}
 .launcher-tile {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.6rem;
   padding: 0.5rem;
+  width: 100%;
   background: none;
   border: none;
   border-radius: var(--radius);
+}
+.launcher-edit {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.launcher-cell:hover .launcher-edit,
+.launcher-edit:focus-visible {
+  opacity: 1;
+}
+.launcher-edit:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--surface);
+}
+/* Appareils sans survol (tactile) : bouton toujours visible. */
+@media (hover: none) {
+  .launcher-edit {
+    opacity: 1;
+  }
 }
 .launcher-tile:hover:not(:disabled) {
   background: none;

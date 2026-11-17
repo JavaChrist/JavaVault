@@ -465,6 +465,10 @@ export function VaultScreen() {
                   setRubricFilter(null);
                 }}
                 onCreate={() => setModal({ type: "project" })}
+                onEdit={(id) => {
+                  const project = projects.find((p) => p.id === id);
+                  if (project) setModal({ type: "project", project });
+                }}
               />
             )
           ) : (
@@ -654,45 +658,59 @@ function Dashboard({
   projects,
   onOpen,
   onCreate,
+  onEdit,
 }: {
   projects: Project[];
   onOpen: (id: string) => void;
   onCreate: () => void;
+  onEdit: (id: string) => void;
 }) {
   return (
     <div className="launcher">
       <div className="launcher-grid">
         {projects.map((p) => (
+          <div className="launcher-cell" key={p.id}>
+            <button
+              type="button"
+              className="launcher-tile"
+              onClick={() => onOpen(p.id)}
+              title={p.name}
+            >
+              <span className="launcher-icon">
+                {p.icon ? (
+                  <img src={p.icon} alt="" />
+                ) : (
+                  <span className="icon-placeholder">
+                    {p.name.trim().charAt(0).toUpperCase() || "?"}
+                  </span>
+                )}
+              </span>
+              <span className="launcher-name">{p.name}</span>
+            </button>
+            <button
+              type="button"
+              className="launcher-edit"
+              onClick={() => onEdit(p.id)}
+              aria-label={`Modifier ${p.name}`}
+              title="Modifier le projet / l'icône"
+            >
+              <EditIcon size={16} />
+            </button>
+          </div>
+        ))}
+        <div className="launcher-cell">
           <button
-            key={p.id}
             type="button"
-            className="launcher-tile"
-            onClick={() => onOpen(p.id)}
-            title={p.name}
+            className="launcher-tile launcher-tile-add"
+            onClick={onCreate}
+            title="Nouveau projet"
           >
             <span className="launcher-icon">
-              {p.icon ? (
-                <img src={p.icon} alt="" />
-              ) : (
-                <span className="icon-placeholder">
-                  {p.name.trim().charAt(0).toUpperCase() || "?"}
-                </span>
-              )}
+              <PlusIcon size={40} />
             </span>
-            <span className="launcher-name">{p.name}</span>
+            <span className="launcher-name">Nouveau</span>
           </button>
-        ))}
-        <button
-          type="button"
-          className="launcher-tile launcher-tile-add"
-          onClick={onCreate}
-          title="Nouveau projet"
-        >
-          <span className="launcher-icon">
-            <PlusIcon size={40} />
-          </span>
-          <span className="launcher-name">Nouveau</span>
-        </button>
+        </div>
       </div>
     </div>
   );
