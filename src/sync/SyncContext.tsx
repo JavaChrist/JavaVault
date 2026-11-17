@@ -177,22 +177,12 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       }
 
       if (pendingLocal && !remoteAhead) {
-        // Modifications locales, distant inchangé → pousser.
-        try {
-          await pushRemote(uid, localEnvelope, revision, baseRevision);
-          await confirmSynced(revision);
-          setLastSyncedAt(Date.now());
-          setStatus("synced");
-        } catch (e) {
-          if (e instanceof RemoteConflictError) {
-            const fresh = await readRemote(uid);
-            remoteRef.current = fresh;
-            conflictRemoteRef.current = fresh;
-            setStatus("conflict");
-          } else {
-            throw e;
-          }
-        }
+        // Modifications locales, distant inchangé → pousser. Un
+        // RemoteConflictError éventuel est traité par le catch global.
+        await pushRemote(uid, localEnvelope, revision, baseRevision);
+        await confirmSynced(revision);
+        setLastSyncedAt(Date.now());
+        setStatus("synced");
         return;
       }
 
@@ -206,8 +196,28 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       // Tout aligné.
       setStatus("synced");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erreur de synchronisation.");
-      setStatus("error");
+      // Tout conflit de révision (y compris premier envoi ou course avec
+      // l'abonnement temps réel) doit mener au CHOIX, pas à une erreur morte.
+      if (e instanceof RemoteConflictError) {
+        try {
+          const fresh = await readRemote(uid);
+          remoteRef.current = fresh;
+          conflictRemoteRef.current = fresh;
+          if (fresh) {
+            setStatus("conflict");
+          } else {
+            // Le distant a disparu entre-temps : on retentera au prochain cycle.
+            setError("Le coffre distant est momentanément indisponible.");
+            setStatus("error");
+          }
+        } catch {
+          setError("Impossible de relire le coffre distant.");
+          setStatus("error");
+        }
+      } else {
+        setError(e instanceof Error ? e.message : "Erreur de synchronisation.");
+        setStatus("error");
+      }
     } finally {
       reconcilingRef.current = false;
     }
@@ -285,8 +295,23 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         setLastSyncedAt(Date.now());
         setStatus("synced");
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Résolution impossible.");
-        setStatus("error");
+        if (e instanceof RemoteConflictError) {
+          // Le distant a encore changé pendant la résolution : relire et
+          // redemander un choix plutôt que de rester bloqué en erreur.
+          try {
+            const fresh = await readRemote(account.uid);
+            remoteRef.current = fresh;
+            conflictRemoteRef.current = fresh;
+            setStatus(fresh ? "conflict" : "error");
+            if (!fresh) setError("Le coffre distant est momentanément indisponible.");
+          } catch {
+            setError("Impossible de relire le coffre distant.");
+            setStatus("error");
+          }
+        } else {
+          setError(e instanceof Error ? e.message : "Résolution impossible.");
+          setStatus("error");
+        }
       } finally {
         reconcilingRef.current = false;
       }

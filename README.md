@@ -121,6 +121,14 @@ Hébergement **statique** (ex. Vercel) : publier le contenu de `dist/`.
 **HTTPS obligatoire** pour l'installation PWA et le service worker. Aucune
 fonction serveur nécessaire. Déployer aussi les règles `firestore.rules`.
 
+Sur Vercel :
+- Renseigner les variables `VITE_*` (lues **au build** → redéployer après ajout).
+- Ajouter le domaine de déploiement dans **Firebase → Authentication → Authorized
+  domains** (sinon `auth/unauthorized-domain`).
+- Les en-têtes de sécurité et la **CSP** sont appliqués via `vercel.json`
+  (self + endpoints Firebase uniquement ; aucun script tiers, analytics ou
+  police distante).
+
 ## Utilisation
 
 1. **Créer le coffre** : choisir une phrase maître (≥ 10 caractères) et la
