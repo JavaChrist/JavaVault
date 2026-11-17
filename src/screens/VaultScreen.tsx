@@ -58,6 +58,8 @@ export function VaultScreen() {
 
   const q = query.trim().toLowerCase();
   const searching = q.length > 0;
+  // Accueil « lanceur » : ni recherche ni projet ouvert → grille d'icônes seule.
+  const isHome = !searching && !selected;
 
   // --- Mutations ------------------------------------------------------------
 
@@ -360,52 +362,54 @@ export function VaultScreen() {
         </button>
       </header>
 
-      <div className="app-body">
-        <aside className="projects-pane">
-          <div className="pane-head">
-            <h3>Projets</h3>
-            <button
-              className="btn-ghost btn-icon btn-sm"
-              aria-label="Nouveau projet"
-              title="Nouveau projet"
-              onClick={() => setModal({ type: "project" })}
-            >
-              <PlusIcon />
-            </button>
-          </div>
-          {projects.length === 0 ? (
-            <div className="empty-state text-sm">Aucun projet.</div>
-          ) : (
-            <ul className="project-list">
-              {projects.map((p) => (
-                <li
-                  key={p.id}
-                  className="project-item"
-                  aria-selected={!searching && p.id === selectedId}
-                  tabIndex={0}
-                  onClick={() => {
-                    setSelectedId(p.id);
-                    setQuery("");
-                    setRubricFilter(null);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
+      <div className={`app-body${isHome ? " app-body--home" : ""}`}>
+        {!isHome && (
+          <aside className="projects-pane">
+            <div className="pane-head">
+              <h3>Projets</h3>
+              <button
+                className="btn-ghost btn-icon btn-sm"
+                aria-label="Nouveau projet"
+                title="Nouveau projet"
+                onClick={() => setModal({ type: "project" })}
+              >
+                <PlusIcon />
+              </button>
+            </div>
+            {projects.length === 0 ? (
+              <div className="empty-state text-sm">Aucun projet.</div>
+            ) : (
+              <ul className="project-list">
+                {projects.map((p) => (
+                  <li
+                    key={p.id}
+                    className="project-item"
+                    aria-selected={!searching && p.id === selectedId}
+                    tabIndex={0}
+                    onClick={() => {
                       setSelectedId(p.id);
                       setQuery("");
-                    }
-                  }}
-                >
-                  <span className="name">{p.name}</span>
-                  <span className="meta">
-                    {p.entries.length} entrée(s)
-                    {p.originals.length > 0 && ` · ${p.originals.length} original(aux)`}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </aside>
+                      setRubricFilter(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSelectedId(p.id);
+                        setQuery("");
+                      }
+                    }}
+                  >
+                    <span className="name">{p.name}</span>
+                    <span className="meta">
+                      {p.entries.length} entrée(s)
+                      {p.originals.length > 0 && ` · ${p.originals.length} original(aux)`}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </aside>
+        )}
 
         <main className="content-pane">
           {searching ? (
@@ -618,23 +622,17 @@ function Dashboard({
   onCreate: () => void;
 }) {
   return (
-    <div className="dashboard">
-      <div className="dashboard-head">
-        <h2>Tableau de bord</h2>
-        <p className="muted text-sm">
-          Cliquez sur un projet pour ouvrir sa page.
-        </p>
-      </div>
-      <div className="project-grid">
+    <div className="launcher">
+      <div className="launcher-grid">
         {projects.map((p) => (
           <button
             key={p.id}
             type="button"
-            className="project-tile"
+            className="launcher-tile"
             onClick={() => onOpen(p.id)}
             title={p.name}
           >
-            <span className="project-tile-icon">
+            <span className="launcher-icon">
               {p.icon ? (
                 <img src={p.icon} alt="" />
               ) : (
@@ -643,22 +641,19 @@ function Dashboard({
                 </span>
               )}
             </span>
-            <span className="project-tile-name">{p.name}</span>
-            <span className="project-tile-meta">
-              {p.entries.length} entrée(s)
-            </span>
+            <span className="launcher-name">{p.name}</span>
           </button>
         ))}
         <button
           type="button"
-          className="project-tile project-tile-add"
+          className="launcher-tile launcher-tile-add"
           onClick={onCreate}
           title="Nouveau projet"
         >
-          <span className="project-tile-icon">
-            <PlusIcon size={34} />
+          <span className="launcher-icon">
+            <PlusIcon size={40} />
           </span>
-          <span className="project-tile-name">Nouveau projet</span>
+          <span className="launcher-name">Nouveau</span>
         </button>
       </div>
     </div>
