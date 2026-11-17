@@ -155,7 +155,10 @@ export function ExportModal({ project, onClose, onExportBackup }: ExportModalPro
                 <div>
                   <div className="preview-name">{o.fileName}</div>
                   <div className="text-sm muted">
-                    {o.kind.toUpperCase()} · importé le{" "}
+                    {(o.kind === "file"
+                      ? o.fileName.split(".").pop()?.toUpperCase() || "FICHIER"
+                      : o.kind.toUpperCase())}{" "}
+                    · importé le{" "}
                     {new Date(o.importedAt).toLocaleString("fr-FR")}
                   </div>
                 </div>

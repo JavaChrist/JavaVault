@@ -234,6 +234,11 @@ export function VaultScreen() {
         <span className="entry-name">{entry.name}</span>
         <span className="badge badge-accent">{entry.rubric}</span>
         {entry.kind === "json" && <span className="badge">JSON</span>}
+        {entry.kind === "file" && (
+          <span className="badge">
+            {(entry.fileName?.split(".").pop() || "FICHIER").toUpperCase()}
+          </span>
+        )}
         {projectLabel && <span className="badge">{projectLabel}</span>}
         <div className="spacer" />
         <button
@@ -322,7 +327,7 @@ export function VaultScreen() {
     if (!selected) return;
     const now = Date.now();
     const plan = selected.entries
-      .filter((e) => e.kind !== "json")
+      .filter((e) => e.kind === "value")
       .map((e) => ({ entry: e, proposal: classifyNameWithRubrics(e.name, rubrics) }))
       .filter((c) => c.proposal !== "Autres" && c.proposal !== c.entry.rubric);
     if (plan.length === 0) {

@@ -14,7 +14,10 @@ export const DEFAULT_RUBRICS = [
 export type Rubric = string;
 
 /** Type de contenu d'une entrée. */
-export type EntryKind = "value" | "json";
+// - "value" : paire clé/valeur (ex. variable d'environnement).
+// - "json"  : document JSON conservé tel quel.
+// - "file"  : tout autre fichier texte conservé tel quel (.yml, .toml, .pem…).
+export type EntryKind = "value" | "json" | "file";
 
 export interface VaultEntry {
   id: string;
@@ -34,7 +37,7 @@ export interface VaultEntry {
 /** Original importé conservé tel quel, pour téléchargement exact ultérieur. */
 export interface ImportedOriginal {
   id: string;
-  kind: "env" | "json";
+  kind: "env" | "json" | "file";
   fileName: string;
   /** Contenu exact importé (octets en texte UTF-8), jamais réinterprété. */
   content: string;

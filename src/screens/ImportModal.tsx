@@ -20,7 +20,7 @@ export interface ImportedEntry {
 
 export interface ImportPayload {
   entries: ImportedEntry[];
-  original: { kind: "env" | "json"; fileName: string; content: string };
+  original: { kind: "env" | "json" | "file"; fileName: string; content: string };
 }
 
 interface ImportModalProps {
@@ -53,7 +53,7 @@ export function ImportModal({
   const [envText, setEnvText] = useState("");
   const [envFileName, setEnvFileName] = useState(".env.local");
   const [jsonText, setJsonText] = useState("");
-  const [jsonFileName, setJsonFileName] = useState("service-account.json");
+  const [jsonFileName, setJsonFileName] = useState("document.txt");
 
   const [revealAll, setRevealAll] = useState(false);
   const [rows, setRows] = useState<EnvRow[] | null>(null);
@@ -151,20 +151,28 @@ export function ImportModal({
     }
   }, [jsonText]);
 
+  // Un document est considéré « JSON » si son nom finit par .json ou si son
+  // contenu est un JSON valide ; sinon c'est un fichier générique conservé tel quel.
+  const looksJson = useMemo(
+    () => /\.json$/i.test(jsonFileName.trim()) || jsonValid === true,
+    [jsonFileName, jsonValid],
+  );
+
   const confirmJson = () => {
     setError(null);
     if (!jsonText.trim()) {
-      setError("Collez ou choisissez un fichier JSON.");
+      setError("Collez ou choisissez un fichier.");
       return;
     }
-    const name = jsonFileName.trim() || "document.json";
+    const name = jsonFileName.trim() || "document.txt";
     const rubric = jsonRubricChoice ?? jsonRubric;
     const replaceExisting = existingNames.has(name);
+    const kind = looksJson ? "json" : "file";
     onConfirm({
       entries: [
-        { name, value: jsonText, rubric, kind: "json", fileName: name, replaceExisting },
+        { name, value: jsonText, rubric, kind, fileName: name, replaceExisting },
       ],
-      original: { kind: "json", fileName: name, content: jsonText },
+      original: { kind, fileName: name, content: jsonText },
     });
   };
 
@@ -210,7 +218,7 @@ export function ImportModal({
               onClick={confirmJson}
               disabled={!jsonText.trim()}
             >
-              Importer le JSON
+              Importer le document
             </button>
           </>
         )
@@ -229,7 +237,7 @@ export function ImportModal({
           aria-pressed={tab === "json"}
           onClick={() => setTab("json")}
         >
-          Document JSON
+          Document / fichier
         </button>
       </div>
 
@@ -360,11 +368,12 @@ export function ImportModal({
       {tab === "json" && (
         <div className="stack">
           <div className="field">
-            <label htmlFor="json-file">Fichier JSON</label>
+            <label htmlFor="json-file">
+              Fichier (JSON, .yml, .toml, .ini, .pem, .txt…)
+            </label>
             <input
               id="json-file"
               type="file"
-              accept="application/json,.json"
               onChange={(e) =>
                 onPickFile(e.target.files?.[0] ?? null, setJsonText, setJsonFileName)
               }
@@ -387,7 +396,7 @@ export function ImportModal({
               onChange={(e) => setJsonText(e.target.value)}
               spellCheck={false}
               style={{ minHeight: 160 }}
-              placeholder='{ "type": "service_account", ... }'
+              placeholder={'{ "type": "service_account", ... }  — ou tout autre contenu (YAML, PEM, texte…)'}
             />
           </div>
           <div className="row" style={{ gap: "0.75rem", alignItems: "flex-end" }}>
@@ -405,13 +414,18 @@ export function ImportModal({
                 ))}
               </select>
             </div>
-            {jsonValid === false && (
-              <span className="badge" style={{ color: "var(--warning)" }}>
-                JSON non valide (importé tel quel)
-              </span>
-            )}
-            {jsonValid === true && (
-              <span className="badge badge-accent">JSON valide</span>
+            {/\.json$/i.test(jsonFileName.trim()) ? (
+              jsonValid === false ? (
+                <span className="badge" style={{ color: "var(--warning)" }}>
+                  JSON non valide (importé tel quel)
+                </span>
+              ) : jsonValid === true ? (
+                <span className="badge badge-accent">JSON valide</span>
+              ) : null
+            ) : (
+              jsonText.trim() && (
+                <span className="badge">Document conservé tel quel</span>
+              )
             )}
           </div>
           <p className="muted text-sm">
