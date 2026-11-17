@@ -130,15 +130,28 @@ button {
   background: var(--surface-2);
   color: var(--text);
   padding: 0.5rem 0.85rem;
-  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s,
+    transform 0.12s ease;
 }
 button:hover:not(:disabled) {
   border-color: var(--border-strong);
   background: var(--surface-3);
 }
+/* Effet d'agrandissement au clic. */
+button:active:not(:disabled) {
+  transform: scale(1.06);
+}
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+@media (prefers-reduced-motion: reduce) {
+  button {
+    transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+  }
+  button:active:not(:disabled) {
+    transform: none;
+  }
 }
 button:focus-visible {
   outline: none;
