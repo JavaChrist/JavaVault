@@ -332,6 +332,119 @@
   font-weight: 550;
 }
 
+/* Logo cliquable (retour au tableau de bord) : garder l'aspect « logo ». */
+button.app-brand {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+}
+button.app-brand:hover:not(:disabled) {
+  background: none;
+  border-color: transparent;
+  opacity: 0.85;
+}
+button.app-brand:active:not(:disabled) {
+  transform: none;
+}
+
+/* --- Tableau de bord ------------------------------------------------------ */
+.dashboard-head {
+  margin-bottom: 1.1rem;
+}
+.dashboard-head h2 {
+  margin: 0 0 0.2rem;
+}
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+}
+.project-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-align: center;
+}
+.project-tile:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+.project-tile-icon {
+  width: 96px;
+  height: 96px;
+  border-radius: 20px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.project-tile-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.project-tile-name {
+  font-weight: 600;
+  word-break: break-word;
+  line-height: 1.2;
+}
+.project-tile-meta {
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+.project-tile-add {
+  border-style: dashed;
+  color: var(--accent);
+}
+.project-tile-add .project-tile-icon {
+  background: transparent;
+  color: var(--accent);
+}
+.icon-placeholder {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+/* --- Sélecteur d'icône (modal projet) ------------------------------------- */
+.icon-picker {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+.icon-preview {
+  flex: 0 0 auto;
+  width: 96px;
+  height: 96px;
+  border-radius: 20px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.icon-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.icon-picker-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
 /* Responsive : pile verticale sur mobile, sans défilement horizontal. */
 @media (max-width: 720px) {
   .app-body {
@@ -347,5 +460,8 @@
   }
   .app-brand span.full {
     display: none;
+  }
+  .project-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   }
 }

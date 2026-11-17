@@ -46,6 +46,8 @@ export interface Project {
   name: string;
   githubUrl?: string;
   note?: string;
+  /** Icône du projet : image 512×512 encodée en data URL (chiffrée comme le reste). */
+  icon?: string;
   entries: VaultEntry[];
   originals: ImportedOriginal[];
   createdAt: number;

@@ -70,6 +70,7 @@ export function VaultScreen() {
         name: draft.name,
         githubUrl: draft.githubUrl || undefined,
         note: draft.note || undefined,
+        icon: draft.icon || undefined,
         entries: [],
         originals: [],
         createdAt: now,
@@ -88,6 +89,7 @@ export function VaultScreen() {
       p.name = draft.name;
       p.githubUrl = draft.githubUrl || undefined;
       p.note = draft.note || undefined;
+      p.icon = draft.icon || undefined;
       p.updatedAt = Date.now();
     });
     setModal(null);
@@ -314,10 +316,20 @@ export function VaultScreen() {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <div className="app-brand">
+        <button
+          type="button"
+          className="app-brand"
+          title="Accueil (tableau de bord)"
+          aria-label="Accueil"
+          onClick={() => {
+            setSelectedId(null);
+            setQuery("");
+            setRubricFilter(null);
+          }}
+        >
           <img src="/icons/logo-192.png" alt="" />
           <span className="full">JavaVault</span>
-        </div>
+        </button>
         <div className="search">
           <SearchIcon />
           <input
@@ -399,17 +411,28 @@ export function VaultScreen() {
           {searching ? (
             <SearchView results={searchResults} renderEntry={renderEntry} query={query} />
           ) : !selected ? (
-            <div className="empty-state">
-              <p>Créez votre premier projet pour commencer.</p>
-              <button
-                className="btn-primary"
-                onClick={() => setModal({ type: "project" })}
-              >
-                <span className="row" style={{ gap: "0.4rem" }}>
-                  <PlusIcon /> Nouveau projet
-                </span>
-              </button>
-            </div>
+            projects.length === 0 ? (
+              <div className="empty-state">
+                <p>Créez votre premier projet pour commencer.</p>
+                <button
+                  className="btn-primary"
+                  onClick={() => setModal({ type: "project" })}
+                >
+                  <span className="row" style={{ gap: "0.4rem" }}>
+                    <PlusIcon /> Nouveau projet
+                  </span>
+                </button>
+              </div>
+            ) : (
+              <Dashboard
+                projects={projects}
+                onOpen={(id) => {
+                  setSelectedId(id);
+                  setRubricFilter(null);
+                }}
+                onCreate={() => setModal({ type: "project" })}
+              />
+            )
           ) : (
             <>
               <div className="content-head">
@@ -579,6 +602,65 @@ export function VaultScreen() {
 
       {/* révision utilisée pour forcer un rafraîchissement cohérent si besoin */}
       <span hidden data-revision={revision} />
+    </div>
+  );
+}
+
+// --- Tableau de bord (grille d'icônes de projets) ----------------------------
+
+function Dashboard({
+  projects,
+  onOpen,
+  onCreate,
+}: {
+  projects: Project[];
+  onOpen: (id: string) => void;
+  onCreate: () => void;
+}) {
+  return (
+    <div className="dashboard">
+      <div className="dashboard-head">
+        <h2>Tableau de bord</h2>
+        <p className="muted text-sm">
+          Cliquez sur un projet pour ouvrir sa page.
+        </p>
+      </div>
+      <div className="project-grid">
+        {projects.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            className="project-tile"
+            onClick={() => onOpen(p.id)}
+            title={p.name}
+          >
+            <span className="project-tile-icon">
+              {p.icon ? (
+                <img src={p.icon} alt="" />
+              ) : (
+                <span className="icon-placeholder">
+                  {p.name.trim().charAt(0).toUpperCase() || "?"}
+                </span>
+              )}
+            </span>
+            <span className="project-tile-name">{p.name}</span>
+            <span className="project-tile-meta">
+              {p.entries.length} entrée(s)
+            </span>
+          </button>
+        ))}
+        <button
+          type="button"
+          className="project-tile project-tile-add"
+          onClick={onCreate}
+          title="Nouveau projet"
+        >
+          <span className="project-tile-icon">
+            <PlusIcon size={34} />
+          </span>
+          <span className="project-tile-name">Nouveau projet</span>
+        </button>
+      </div>
     </div>
   );
 }
