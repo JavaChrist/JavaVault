@@ -22,6 +22,19 @@ export function PwaUpdater() {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
   } = useRegisterSW({
+    onRegisteredSW(_swUrl, registration) {
+      if (!registration) return;
+      // Vérification périodique : l'app ouverte détecte seule une nouvelle
+      // version (sinon le contrôle n'a lieu qu'au rechargement de page).
+      const checkForUpdate = () => {
+        if (navigator.onLine) void registration.update();
+      };
+      setInterval(checkForUpdate, 60_000);
+      // Vérifie aussi quand l'app revient au premier plan.
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") checkForUpdate();
+      });
+    },
     onRegisterError(error) {
       // Enregistrement du service worker impossible : l'app reste utilisable.
       console.warn("Service worker non enregistré :", error);
