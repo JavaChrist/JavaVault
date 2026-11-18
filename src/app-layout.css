@@ -141,9 +141,21 @@
 
 .rubric-filter {
   display: flex;
+  align-items: center;
   gap: 0.4rem;
   flex-wrap: wrap;
   margin-bottom: 1rem;
+}
+.rubric-chips {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+/* Menu déroulant réservé aux petits écrans (voir media query plus bas). */
+.rubric-select {
+  display: none;
+  min-width: 0;
+  max-width: 240px;
 }
 
 .rubric-group {
@@ -512,5 +524,14 @@ button.app-brand:active:not(:disabled) {
     width: 96px;
     height: 96px;
     border-radius: 22px;
+  }
+  /* Rubriques : on remplace les chips par un menu déroulant compact. */
+  .rubric-chips {
+    display: none;
+  }
+  .rubric-select {
+    display: block;
+    flex: 1;
+    max-width: none;
   }
 }

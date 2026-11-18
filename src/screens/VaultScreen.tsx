@@ -530,23 +530,40 @@ export function VaultScreen() {
               </div>
 
               <div className="rubric-filter">
-                <button
-                  className="chip"
-                  aria-pressed={rubricFilter === null}
-                  onClick={() => setRubricFilter(null)}
-                >
-                  Toutes
-                </button>
-                {filterRubrics.map((r) => (
+                {/* Grand écran : chips. */}
+                <div className="rubric-chips">
                   <button
-                    key={r}
                     className="chip"
-                    aria-pressed={rubricFilter === r}
-                    onClick={() => setRubricFilter(r)}
+                    aria-pressed={rubricFilter === null}
+                    onClick={() => setRubricFilter(null)}
                   >
-                    {r}
+                    Toutes
                   </button>
-                ))}
+                  {filterRubrics.map((r) => (
+                    <button
+                      key={r}
+                      className="chip"
+                      aria-pressed={rubricFilter === r}
+                      onClick={() => setRubricFilter(r)}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+                {/* Petit écran : menu déroulant (compact même avec beaucoup de rubriques). */}
+                <select
+                  className="rubric-select"
+                  aria-label="Filtrer par rubrique"
+                  value={rubricFilter ?? ""}
+                  onChange={(e) => setRubricFilter(e.target.value || null)}
+                >
+                  <option value="">Toutes les rubriques</option>
+                  {filterRubrics.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
                 <button
                   className="chip"
                   style={{ borderStyle: "dashed", color: "var(--accent)" }}
