@@ -530,27 +530,7 @@ export function VaultScreen() {
               </div>
 
               <div className="rubric-filter">
-                {/* Grand écran : chips. */}
-                <div className="rubric-chips">
-                  <button
-                    className="chip"
-                    aria-pressed={rubricFilter === null}
-                    onClick={() => setRubricFilter(null)}
-                  >
-                    Toutes
-                  </button>
-                  {filterRubrics.map((r) => (
-                    <button
-                      key={r}
-                      className="chip"
-                      aria-pressed={rubricFilter === r}
-                      onClick={() => setRubricFilter(r)}
-                    >
-                      {r}
-                    </button>
-                  ))}
-                </div>
-                {/* Petit écran : menu déroulant (compact même avec beaucoup de rubriques). */}
+                {/* Filtre par rubrique : menu déroulant (compact, tous écrans). */}
                 <select
                   className="rubric-select"
                   aria-label="Filtrer par rubrique"

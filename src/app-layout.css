@@ -146,16 +146,12 @@
   flex-wrap: wrap;
   margin-bottom: 1rem;
 }
-.rubric-chips {
-  display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
-/* Menu déroulant réservé aux petits écrans (voir media query plus bas). */
+/* Filtre par rubrique en menu déroulant (tous écrans). */
 .rubric-select {
-  display: none;
+  display: block;
   min-width: 0;
-  max-width: 240px;
+  flex: 0 1 260px;
+  max-width: 260px;
 }
 
 .rubric-group {
@@ -525,12 +521,8 @@ button.app-brand:active:not(:disabled) {
     height: 96px;
     border-radius: 22px;
   }
-  /* Rubriques : on remplace les chips par un menu déroulant compact. */
-  .rubric-chips {
-    display: none;
-  }
+  /* Rubriques : le menu déroulant occupe la largeur disponible. */
   .rubric-select {
-    display: block;
     flex: 1;
     max-width: none;
   }
