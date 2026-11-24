@@ -527,3 +527,41 @@ button.app-brand:active:not(:disabled) {
     max-width: none;
   }
 }
+
+/* Document joint à une entrée (fenêtre d'édition) */
+.file-card {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  padding: 0.6rem 0.7rem;
+  flex-wrap: wrap;
+}
+.file-card-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.file-card-info {
+  flex: 1;
+  min-width: 0;
+}
+.file-card-meta {
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-top: 0.15rem;
+}
+.file-card-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  width: 100%;
+  justify-content: flex-end;
+}
