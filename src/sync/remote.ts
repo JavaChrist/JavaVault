@@ -10,6 +10,7 @@ import {
   onSnapshot,
   runTransaction,
   serverTimestamp,
+  writeBatch,
   type DocumentReference,
 } from "firebase/firestore";
 import { getDb } from "@/firebase/config";
@@ -131,7 +132,7 @@ export function subscribeRemote(
   onError: (error: Error) => void,
 ): () => void {
   let seq = 0;
-  return onSnapshot(
+  const unsubscribe = onSnapshot(
     vaultRef(uid),
     (snap) => {
       const current = ++seq;
@@ -150,6 +151,12 @@ export function subscribeRemote(
     },
     (err) => onError(err),
   );
+  return () => {
+    // Invalide les chargements de morceaux en cours : un résultat arrivant
+    // après le désabonnement ne doit pas réconcilier avec un état périmé.
+    seq++;
+    unsubscribe();
+  };
 }
 
 /**
@@ -180,6 +187,7 @@ export async function pushRemote(
   }
 
   const ref = vaultRef(uid);
+  let previous: ChunkInfo | null = null;
   await runTransaction(getDb(), async (tx) => {
     const snap = await tx.get(ref);
     const data = snap.exists() ? snap.data() : undefined;
@@ -187,11 +195,9 @@ export async function pushRemote(
     if (currentRevision !== expectedRemoteRevision) {
       throw new RemoteConflictError(currentRevision);
     }
-    // Les morceaux de la version précédente sont supprimés dans la même transaction.
-    const previous = readChunkInfo(data);
-    if (previous) {
-      for (let i = 0; i < previous.count; i++) tx.delete(chunkRef(uid, previous.set, i));
-    }
+    // Les suppressions comptent dans la taille de la transaction (~10 Mio) :
+    // l'ancien jeu de morceaux est nettoyé après validation, pas ici.
+    previous = readChunkInfo(data);
     parts.forEach((part, i) => tx.set(chunkRef(uid, set, i), { data: part }));
     tx.set(ref, {
       envelope: chunked ? { ...envelope, ciphertext: "" } : envelope,
@@ -200,4 +206,21 @@ export async function pushRemote(
       ...(chunked ? { chunkSet: set, chunkCount: parts.length } : {}),
     });
   });
+  await deleteChunks(uid, previous);
+}
+
+/**
+ * Supprime un jeu de morceaux devenu inutile. Best effort : un échec laisse
+ * seulement des morceaux orphelins (chiffrés), sans effet sur le coffre courant.
+ * Un lecteur qui tenait encore l'ancien manifeste relit le document (readRemote).
+ */
+async function deleteChunks(uid: string, info: ChunkInfo | null): Promise<void> {
+  if (!info) return;
+  try {
+    const batch = writeBatch(getDb());
+    for (let i = 0; i < info.count; i++) batch.delete(chunkRef(uid, info.set, i));
+    await batch.commit();
+  } catch {
+    // Ignoré volontairement (voir ci-dessus).
+  }
 }
