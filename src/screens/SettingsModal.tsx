@@ -45,7 +45,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
     try {
       const file = await exportBackup();
       downloadText(backupFileName(), JSON.stringify(file, null, 2), "application/json");
-      toast.show("Export de secours chiffré téléchargé", "success");
+      toast.show("Coffre exporté (chiffré)", "success");
     } catch (e) {
       toast.show(e instanceof Error ? e.message : "Export impossible.", "error");
     }
@@ -206,7 +206,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
         </p>
         <button onClick={doExportBackup}>
           <span className="row" style={{ gap: "0.4rem" }}>
-            <DownloadIcon /> Télécharger l'export de secours
+            <DownloadIcon /> Exporter le coffre
           </span>
         </button>
 
