@@ -17,8 +17,21 @@ export function downloadText(
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/** Lit un fichier choisi par l'utilisateur en texte UTF-8. */
-export function readFileAsText(file: File): Promise<string> {
+/** Taille max d'un fichier joint ou importé (le coffre entier est synchronisé). */
+export const MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024;
+
+/**
+ * Lit un fichier choisi par l'utilisateur en texte UTF-8.
+ * `maxBytes` refuse les fichiers trop gros avant lecture.
+ */
+export function readFileAsText(file: File, maxBytes?: number): Promise<string> {
+  if (maxBytes !== undefined && file.size > maxBytes) {
+    return Promise.reject(
+      new Error(
+        `Fichier trop volumineux (${formatBytes(file.size)}, max ${formatBytes(maxBytes)}).`,
+      ),
+    );
+  }
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(reader.error ?? new Error("Lecture échouée."));
@@ -42,12 +55,16 @@ export function documentFileName(
   return base;
 }
 
-/** Taille lisible du contenu (octets UTF-8). */
-export function formatSize(content: string): string {
-  const bytes = new TextEncoder().encode(content).length;
+/** Taille lisible d'un nombre d'octets. */
+export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} o`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1).replace(".", ",")} Ko`;
   return `${(bytes / (1024 * 1024)).toFixed(1).replace(".", ",")} Mo`;
+}
+
+/** Taille lisible du contenu (octets UTF-8). */
+export function formatSize(content: string): string {
+  return formatBytes(new TextEncoder().encode(content).length);
 }
 
 type SaveFilePicker = (options: {

@@ -20,6 +20,11 @@ service cloud.firestore {
     // Coffre personnel : vaults/{uid}. Seul l'UID autorisé accède à SON document.
     match /vaults/{uid} {
       allow read, write: if isAuthorized() && uid == request.auth.uid;
+
+      // Morceaux du ciphertext quand le coffre dépasse ~700 Ko (toujours chiffré).
+      match /chunks/{chunkId} {
+        allow read, write: if isAuthorized() && uid == request.auth.uid;
+      }
     }
 
     // Tout le reste est refusé par défaut.

@@ -7,7 +7,7 @@ import { EyeIcon, EyeOffIcon } from "@/components/icons";
 import { parseEnv } from "@/vault/envParser";
 import { classifyJson, classifyName } from "@/vault/classify";
 import type { EntryKind, Rubric } from "@/vault/types";
-import { readFileAsText } from "@/utils/download";
+import { MAX_ATTACHMENT_BYTES, readFileAsText } from "@/utils/download";
 
 export interface ImportedEntry {
   name: string;
@@ -69,7 +69,7 @@ export function ImportModal({
   ) => {
     if (!file) return;
     try {
-      const text = await readFileAsText(file);
+      const text = await readFileAsText(file, MAX_ATTACHMENT_BYTES);
       setText(text);
       setName(file.name);
       setRows(null);

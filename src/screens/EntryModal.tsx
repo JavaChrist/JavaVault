@@ -9,6 +9,7 @@ import { DownloadIcon, FileIcon } from "@/components/icons";
 import {
   documentFileName,
   formatSize,
+  MAX_ATTACHMENT_BYTES,
   readFileAsText,
   saveFileAs,
 } from "@/utils/download";
@@ -112,7 +113,7 @@ export function EntryModal({
   const onPickFile = async (file: File | null) => {
     if (!file) return;
     try {
-      const text = await readFileAsText(file);
+      const text = await readFileAsText(file, MAX_ATTACHMENT_BYTES);
       setValue(text);
       setFileName(file.name);
       setHasFile(true);
