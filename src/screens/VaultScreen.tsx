@@ -25,7 +25,7 @@ import { SyncIndicator } from "@/sync/SyncIndicator";
 import { ConflictModal } from "@/sync/ConflictModal";
 import { useSync } from "@/sync/SyncContext";
 import { classifyNameWithRubrics } from "@/vault/classify";
-import { downloadText } from "@/utils/download";
+import { documentFileName, saveFileAs } from "@/utils/download";
 import { newId, type Project, type Rubric, type VaultEntry } from "@/vault/types";
 
 type ModalState =
@@ -231,21 +231,22 @@ export function VaultScreen() {
 
   // --- Téléchargement d'un document (contenu exact, généré sur l'appareil) ---
 
-  const entryFileName = (entry: VaultEntry): string => {
-    const stored = entry.fileName?.trim();
-    if (stored) return stored;
-    const base = entry.name.trim() || "document";
-    if (entry.kind === "json" && !/\.json$/i.test(base)) return `${base}.json`;
-    return base;
-  };
+  const entryFileName = (entry: VaultEntry): string =>
+    documentFileName(entry.name, entry.fileName, entry.kind);
 
-  const downloadEntry = (entry: VaultEntry) => {
-    downloadText(
-      entryFileName(entry),
-      entry.value,
-      entry.kind === "json" ? "application/json" : "text/plain;charset=utf-8",
-    );
-    toast.show("Fichier téléchargé", "success");
+  // « Enregistrer sous… » : l'utilisateur choisit le dossier (Bureau ou autre).
+  const downloadEntry = async (entry: VaultEntry) => {
+    try {
+      const result = await saveFileAs(
+        entryFileName(entry),
+        entry.value,
+        entry.kind === "json" ? "application/json" : "text/plain;charset=utf-8",
+      );
+      if (result === "saved") toast.show("Fichier enregistré", "success");
+      else if (result === "downloaded") toast.show("Fichier téléchargé", "success");
+    } catch (e) {
+      toast.show(e instanceof Error ? e.message : "Enregistrement impossible.", "error");
+    }
   };
 
   // --- Rendu d'une entrée ---------------------------------------------------
@@ -266,8 +267,8 @@ export function VaultScreen() {
         {entry.kind !== "value" && (
           <button
             className="btn-ghost btn-icon btn-sm"
-            aria-label="Télécharger le fichier"
-            title={`Télécharger ${entryFileName(entry)}`}
+            aria-label="Enregistrer le fichier sous…"
+            title={`Enregistrer ${entryFileName(entry)} sous…`}
             onClick={() => downloadEntry(entry)}
           >
             <DownloadIcon />

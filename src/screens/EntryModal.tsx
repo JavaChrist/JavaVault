@@ -4,7 +4,14 @@ import { useRef, useState } from "react";
 import { Modal } from "@/components/Modal";
 import { useConfirm } from "@/components/ConfirmProvider";
 import { classifyJson, classifyName } from "@/vault/classify";
-import { readFileAsText } from "@/utils/download";
+import { useToast } from "@/components/ToastProvider";
+import { DownloadIcon, FileIcon } from "@/components/icons";
+import {
+  documentFileName,
+  formatSize,
+  readFileAsText,
+  saveFileAs,
+} from "@/utils/download";
 import type { EntryKind, Rubric, VaultEntry } from "@/vault/types";
 
 export interface EntryDraft {
@@ -37,6 +44,7 @@ export function EntryModal({
   onAddRubric,
 }: EntryModalProps) {
   const confirm = useConfirm();
+  const toast = useToast();
   const [name, setName] = useState(initial?.name ?? "");
   const [value, setValue] = useState(initial?.value ?? "");
   const [rubric, setRubric] = useState<Rubric>(
@@ -116,6 +124,27 @@ export function EntryModal({
       setError(e instanceof Error ? e.message : "Lecture du fichier impossible.");
     }
   };
+
+  // « Enregistrer sous… » : le contenu en cours de saisie, dans le dossier choisi.
+  const saveDocumentAs = async () => {
+    if (!value) return;
+    try {
+      const result = await saveFileAs(
+        documentFileName(name, fileName, kind),
+        value,
+        kind === "json" ? "application/json" : "text/plain;charset=utf-8",
+      );
+      if (result === "saved") toast.show("Fichier enregistré", "success");
+      else if (result === "downloaded") toast.show("Fichier téléchargé", "success");
+    } catch (e) {
+      toast.show(e instanceof Error ? e.message : "Enregistrement impossible.", "error");
+    }
+  };
+
+  const fileExt = (
+    /\.([a-z0-9]{1,10})$/i.exec(documentFileName(name, fileName, kind))?.[1] ??
+    "fichier"
+  ).toUpperCase();
 
   const save = () => {
     const trimmedName = name.trim();
@@ -212,39 +241,88 @@ export function EntryModal({
       </div>
 
       {kind !== "value" && (
-        <div className="row" style={{ gap: "0.75rem", marginTop: "0.9rem", alignItems: "flex-end" }}>
-          <div className="field" style={{ flex: 1, marginBottom: 0 }}>
-            <label htmlFor="e-file">Fichier</label>
-            <input
-              ref={fileInputRef}
-              id="e-file"
-              type="file"
-              hidden
-              accept={kind === "json" ? ".json,application/json" : undefined}
-              onChange={(e) => {
-                onPickFile(e.target.files?.[0] ?? null);
-                e.target.value = "";
-              }}
-            />
-            <button
-              type="button"
-              style={{ width: "100%" }}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {fileName ? "Remplacer le fichier…" : "Choisir un fichier…"}
-            </button>
-          </div>
-          <div className="field" style={{ flex: 1, marginBottom: 0 }}>
-            <label htmlFor="e-filename">Nom du fichier</label>
-            <input
-              id="e-filename"
-              value={fileName}
-              onChange={(e) => setFileName(e.target.value)}
-              spellCheck={false}
-              placeholder={kind === "json" ? "service-account.json" : "config.yml"}
-              className="mono"
-            />
-          </div>
+        <div className="field" style={{ marginTop: "0.9rem", marginBottom: 0 }}>
+          <label htmlFor={fileName ? "e-filename" : "e-file-pick"}>Document</label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            hidden
+            accept={kind === "json" ? ".json,application/json" : undefined}
+            onChange={(e) => {
+              onPickFile(e.target.files?.[0] ?? null);
+              e.target.value = "";
+            }}
+          />
+          {fileName ? (
+            <div className="file-card">
+              <div className="file-card-icon">
+                <FileIcon size={20} />
+              </div>
+              <div className="file-card-info">
+                <input
+                  id="e-filename"
+                  value={fileName}
+                  onChange={(e) => setFileName(e.target.value)}
+                  spellCheck={false}
+                  aria-label="Nom du fichier"
+                  className="mono"
+                />
+                <div className="file-card-meta">
+                  {fileExt} · {formatSize(value)}
+                </div>
+              </div>
+              <div className="file-card-actions">
+                <button
+                  type="button"
+                  className="btn-sm"
+                  onClick={saveDocumentAs}
+                  disabled={!value}
+                  title="Choisir le dossier (Bureau ou autre)"
+                >
+                  <span className="row" style={{ gap: "0.35rem" }}>
+                    <DownloadIcon /> Enregistrer sous…
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="btn-sm"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Remplacer
+                </button>
+                <button
+                  type="button"
+                  className="btn-ghost btn-sm"
+                  onClick={() => setFileName("")}
+                  title="Détacher le fichier (le contenu reste)"
+                >
+                  Retirer
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="row" style={{ gap: "0.5rem", flexWrap: "wrap" }}>
+              <button
+                id="e-file-pick"
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <span className="row" style={{ gap: "0.35rem" }}>
+                  <FileIcon /> Choisir un fichier…
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={saveDocumentAs}
+                disabled={!value}
+                title="Enregistrer le contenu saisi dans le dossier de votre choix"
+              >
+                <span className="row" style={{ gap: "0.35rem" }}>
+                  <DownloadIcon /> Enregistrer sous…
+                </span>
+              </button>
+            </div>
+          )}
         </div>
       )}
 

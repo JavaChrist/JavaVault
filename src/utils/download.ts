@@ -26,3 +26,77 @@ export function readFileAsText(file: File): Promise<string> {
     reader.readAsText(file, "utf-8");
   });
 }
+
+// --- « Enregistrer sous… » --------------------------------------------------
+
+/** Nom de fichier proposé pour un document : nom joint, sinon nom de l'entrée. */
+export function documentFileName(
+  name: string,
+  fileName: string | undefined,
+  kind: "value" | "json" | "file",
+): string {
+  const stored = fileName?.trim();
+  if (stored) return stored;
+  const base = name.trim() || "document";
+  if (kind === "json" && !/\.json$/i.test(base)) return `${base}.json`;
+  return base;
+}
+
+/** Taille lisible du contenu (octets UTF-8). */
+export function formatSize(content: string): string {
+  const bytes = new TextEncoder().encode(content).length;
+  if (bytes < 1024) return `${bytes} o`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1).replace(".", ",")} Ko`;
+  return `${(bytes / (1024 * 1024)).toFixed(1).replace(".", ",")} Mo`;
+}
+
+type SaveFilePicker = (options: {
+  suggestedName?: string;
+  types?: { description?: string; accept: Record<string, string[]> }[];
+}) => Promise<{
+  createWritable: () => Promise<{
+    write: (data: Blob) => Promise<void>;
+    close: () => Promise<void>;
+  }>;
+}>;
+
+/**
+ * Enregistre un fichier en laissant l'utilisateur choisir le dossier (Bureau ou
+ * autre) via la boîte « Enregistrer sous » du navigateur (Chrome / Edge).
+ * Sans cette API (Firefox, Safari, iOS), repli sur un téléchargement classique.
+ * Tout est généré sur l'appareil, rien n'est envoyé.
+ *
+ * À appeler directement depuis un clic (le navigateur exige un geste utilisateur).
+ */
+export async function saveFileAs(
+  fileName: string,
+  content: string,
+  mime = "text/plain;charset=utf-8",
+): Promise<"saved" | "downloaded" | "cancelled"> {
+  const picker = (window as unknown as { showSaveFilePicker?: SaveFilePicker })
+    .showSaveFilePicker;
+  if (!picker) {
+    downloadText(fileName, content, mime);
+    return "downloaded";
+  }
+  const ext = /(\.[a-z0-9]{1,10})$/i.exec(fileName)?.[1]?.toLowerCase();
+  const baseMime = mime.split(";")[0];
+  try {
+    const handle = await picker({
+      suggestedName: fileName,
+      types: ext ? [{ description: "Document", accept: { [baseMime]: [ext] } }] : undefined,
+    });
+    const writable = await handle.createWritable();
+    await writable.write(new Blob([content], { type: mime }));
+    await writable.close();
+    return "saved";
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "AbortError") return "cancelled";
+    // API présente mais refusée (contexte non sécurisé, iframe…) : repli.
+    if (e instanceof DOMException && e.name === "SecurityError") {
+      downloadText(fileName, content, mime);
+      return "downloaded";
+    }
+    throw e;
+  }
+}
