@@ -53,6 +53,8 @@ export function EntryModal({
   const [kind, setKind] = useState<EntryKind>(initial?.kind ?? "value");
   const [note, setNote] = useState(initial?.note ?? "");
   const [fileName, setFileName] = useState(initial?.fileName ?? "");
+  // Separate from fileName so clearing the name while renaming keeps the card.
+  const [hasFile, setHasFile] = useState(Boolean(initial?.fileName));
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [newRubric, setNewRubric] = useState("");
   const [addingRubric, setAddingRubric] = useState(false);
@@ -113,6 +115,7 @@ export function EntryModal({
       const text = await readFileAsText(file);
       setValue(text);
       setFileName(file.name);
+      setHasFile(true);
       if (!name.trim()) setName(file.name);
       if (!rubricTouched) {
         setRubric(
@@ -156,7 +159,7 @@ export function EntryModal({
       setError("La valeur ou le contenu est obligatoire.");
       return;
     }
-    onSave({ name: trimmedName, value, rubric, kind, note, fileName: fileName.trim() });
+    onSave({ name: trimmedName, value, rubric, kind, note, fileName: hasFile ? fileName.trim() : "" });
   };
 
   return (
@@ -242,7 +245,7 @@ export function EntryModal({
 
       {kind !== "value" && (
         <div className="field" style={{ marginTop: "0.9rem", marginBottom: 0 }}>
-          <label htmlFor={fileName ? "e-filename" : "e-file-pick"}>Document</label>
+          <label htmlFor={hasFile ? "e-filename" : "e-file-pick"}>Document</label>
           <input
             ref={fileInputRef}
             type="file"
@@ -253,7 +256,7 @@ export function EntryModal({
               e.target.value = "";
             }}
           />
-          {fileName ? (
+          {hasFile ? (
             <div className="file-card">
               <div className="file-card-icon">
                 <FileIcon size={20} />
@@ -293,7 +296,10 @@ export function EntryModal({
                 <button
                   type="button"
                   className="btn-ghost btn-sm"
-                  onClick={() => setFileName("")}
+                  onClick={() => {
+                    setFileName("");
+                    setHasFile(false);
+                  }}
                   title="Détacher le fichier (le contenu reste)"
                 >
                   Retirer
