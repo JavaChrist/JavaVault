@@ -25,6 +25,7 @@ import { SyncIndicator } from "@/sync/SyncIndicator";
 import { ConflictModal } from "@/sync/ConflictModal";
 import { useSync } from "@/sync/SyncContext";
 import { classifyNameWithRubrics } from "@/vault/classify";
+import { downloadText } from "@/utils/download";
 import { newId, type Project, type Rubric, type VaultEntry } from "@/vault/types";
 
 type ModalState =
@@ -137,6 +138,7 @@ export function VaultScreen() {
         e.rubric = draft.rubric;
         e.kind = draft.kind;
         e.note = draft.note || undefined;
+        e.fileName = draft.kind === "value" ? undefined : draft.fileName || undefined;
         e.updatedAt = now;
       } else {
         p.entries.push({
@@ -146,6 +148,7 @@ export function VaultScreen() {
           rubric: draft.rubric,
           kind: draft.kind,
           note: draft.note || undefined,
+          fileName: draft.kind === "value" ? undefined : draft.fileName || undefined,
           createdAt: now,
           updatedAt: now,
         });
@@ -226,6 +229,25 @@ export function VaultScreen() {
     toast.show(`${payload.entries.length} entrée(s) importée(s)`, "success");
   };
 
+  // --- Téléchargement d'un document (contenu exact, généré sur l'appareil) ---
+
+  const entryFileName = (entry: VaultEntry): string => {
+    const stored = entry.fileName?.trim();
+    if (stored) return stored;
+    const base = entry.name.trim() || "document";
+    if (entry.kind === "json" && !/\.json$/i.test(base)) return `${base}.json`;
+    return base;
+  };
+
+  const downloadEntry = (entry: VaultEntry) => {
+    downloadText(
+      entryFileName(entry),
+      entry.value,
+      entry.kind === "json" ? "application/json" : "text/plain;charset=utf-8",
+    );
+    toast.show("Fichier téléchargé", "success");
+  };
+
   // --- Rendu d'une entrée ---------------------------------------------------
 
   const renderEntry = (entry: VaultEntry, projectLabel?: string) => (
@@ -241,6 +263,16 @@ export function VaultScreen() {
         )}
         {projectLabel && <span className="badge">{projectLabel}</span>}
         <div className="spacer" />
+        {entry.kind !== "value" && (
+          <button
+            className="btn-ghost btn-icon btn-sm"
+            aria-label="Télécharger le fichier"
+            title={`Télécharger ${entryFileName(entry)}`}
+            onClick={() => downloadEntry(entry)}
+          >
+            <DownloadIcon />
+          </button>
+        )}
         <button
           className="btn-ghost btn-icon btn-sm"
           aria-label="Modifier"

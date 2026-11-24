@@ -1,9 +1,10 @@
 // Création / édition d'une entrée (clé, variable, document JSON…).
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Modal } from "@/components/Modal";
 import { useConfirm } from "@/components/ConfirmProvider";
-import { classifyName } from "@/vault/classify";
+import { classifyJson, classifyName } from "@/vault/classify";
+import { readFileAsText } from "@/utils/download";
 import type { EntryKind, Rubric, VaultEntry } from "@/vault/types";
 
 export interface EntryDraft {
@@ -12,6 +13,8 @@ export interface EntryDraft {
   rubric: Rubric;
   kind: EntryKind;
   note: string;
+  /** Nom du fichier joint (documents JSON / fichiers), utilisé au téléchargement. */
+  fileName: string;
 }
 
 interface EntryModalProps {
@@ -41,6 +44,8 @@ export function EntryModal({
   );
   const [kind, setKind] = useState<EntryKind>(initial?.kind ?? "value");
   const [note, setNote] = useState(initial?.note ?? "");
+  const [fileName, setFileName] = useState(initial?.fileName ?? "");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [newRubric, setNewRubric] = useState("");
   const [addingRubric, setAddingRubric] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +56,7 @@ export function EntryModal({
     name !== (initial?.name ?? "") ||
     value !== (initial?.value ?? "") ||
     note !== (initial?.note ?? "") ||
+    fileName !== (initial?.fileName ?? "") ||
     rubric !== (initial?.rubric ?? defaultRubric ?? rubrics[0] ?? "Autres") ||
     kind !== (initial?.kind ?? "value");
 
@@ -91,6 +97,26 @@ export function EntryModal({
     setNewRubric("");
   };
 
+  // Joindre un fichier : remplit le contenu (octets exacts en UTF-8) et retient
+  // son nom. Lecture locale uniquement, rien n'est envoyé.
+  const onPickFile = async (file: File | null) => {
+    if (!file) return;
+    try {
+      const text = await readFileAsText(file);
+      setValue(text);
+      setFileName(file.name);
+      if (!name.trim()) setName(file.name);
+      if (!rubricTouched) {
+        setRubric(
+          kind === "json" ? classifyJson(file.name, text) : classifyName(file.name),
+        );
+      }
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Lecture du fichier impossible.");
+    }
+  };
+
   const save = () => {
     const trimmedName = name.trim();
     if (!trimmedName) {
@@ -101,7 +127,7 @@ export function EntryModal({
       setError("La valeur ou le contenu est obligatoire.");
       return;
     }
-    onSave({ name: trimmedName, value, rubric, kind, note });
+    onSave({ name: trimmedName, value, rubric, kind, note, fileName: fileName.trim() });
   };
 
   return (
@@ -180,13 +206,55 @@ export function EntryModal({
           >
             <option value="value">Valeur / clé</option>
             <option value="json">Document JSON</option>
+            {initial?.kind === "file" && <option value="file">Fichier texte</option>}
           </select>
         </div>
       </div>
 
+      {kind !== "value" && (
+        <div className="row" style={{ gap: "0.75rem", marginTop: "0.9rem", alignItems: "flex-end" }}>
+          <div className="field" style={{ flex: 1, marginBottom: 0 }}>
+            <label htmlFor="e-file">Fichier</label>
+            <input
+              ref={fileInputRef}
+              id="e-file"
+              type="file"
+              hidden
+              accept={kind === "json" ? ".json,application/json" : undefined}
+              onChange={(e) => {
+                onPickFile(e.target.files?.[0] ?? null);
+                e.target.value = "";
+              }}
+            />
+            <button
+              type="button"
+              style={{ width: "100%" }}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {fileName ? "Remplacer le fichier…" : "Choisir un fichier…"}
+            </button>
+          </div>
+          <div className="field" style={{ flex: 1, marginBottom: 0 }}>
+            <label htmlFor="e-filename">Nom du fichier</label>
+            <input
+              id="e-filename"
+              value={fileName}
+              onChange={(e) => setFileName(e.target.value)}
+              spellCheck={false}
+              placeholder={kind === "json" ? "service-account.json" : "config.yml"}
+              className="mono"
+            />
+          </div>
+        </div>
+      )}
+
       <div className="field" style={{ marginTop: "0.9rem" }}>
         <label htmlFor="e-value">
-          {kind === "json" ? "Contenu JSON" : "Valeur ou contenu"}
+          {kind === "json"
+            ? "Contenu JSON (ou collez-le)"
+            : kind === "file"
+              ? "Contenu du fichier"
+              : "Valeur ou contenu"}
         </label>
         <textarea
           id="e-value"
@@ -198,7 +266,7 @@ export function EntryModal({
               ? '{ "type": "service_account", … }'
               : "Clés multilignes, guillemets et caractères spéciaux préservés."
           }
-          style={{ minHeight: kind === "json" ? 160 : 110 }}
+          style={{ minHeight: kind === "value" ? 110 : 160 }}
         />
       </div>
 
