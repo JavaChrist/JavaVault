@@ -352,6 +352,9 @@ export function VaultProvider({ children }: { children: ReactNode }) {
           return "relocked";
         }
       }
+      // Coffre adopté sans clé (appareil neuf, ou verrouillé) : il existe
+      // désormais localement, l'écran passe de « créer » à « déverrouiller ».
+      setStatus("locked");
       return "stored";
     },
     [applyRevision, applyBase, applyData, lock],

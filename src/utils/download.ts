@@ -17,6 +17,14 @@ export function downloadText(
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+/** Nom du fichier d'export de secours, horodaté (ex. javavault-secours-20261124-1730.json). */
+export function backupFileName(date = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `javavault-secours-${date.getFullYear()}${p(date.getMonth() + 1)}${p(
+    date.getDate(),
+  )}-${p(date.getHours())}${p(date.getMinutes())}.json`;
+}
+
 /** Taille max d'un fichier joint ou importé (le coffre entier est synchronisé). */
 export const MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024;
 
