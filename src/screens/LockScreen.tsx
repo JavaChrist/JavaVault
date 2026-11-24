@@ -1,22 +1,24 @@
 // Écran de verrouillage : création du coffre, déverrouillage, ou restauration.
 // Sépare clairement « déverrouiller » de toute notion de compte distant.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PassphraseInput } from "@/components/PassphraseInput";
 import { useConfirm } from "@/components/ConfirmProvider";
 import { useToast } from "@/components/ToastProvider";
 import { DecryptionError, useVault } from "@/vault/VaultContext";
+import { useSync } from "@/sync/SyncContext";
 import { assertBackupFile, type BackupFile } from "@/vault/backup";
 import { readFileAsText } from "@/utils/download";
 import { APP_VERSION } from "@/config";
 
-type Mode = "unlock" | "create" | "restore";
+type Mode = "unlock" | "create" | "restore" | "sync";
 
 const MIN_LENGTH = 10;
 
 export function LockScreen() {
   const { status, createVault, unlock, restoreFromBackup, destroy, busy } =
     useVault();
+  const sync = useSync();
   const confirm = useConfirm();
   const toast = useToast();
 
@@ -26,6 +28,21 @@ export function LockScreen() {
   const [backup, setBackup] = useState<BackupFile | null>(null);
   const [backupName, setBackupName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [accountPassword, setAccountPassword] = useState("");
+  const [signingIn, setSigningIn] = useState(false);
+
+  // Le coffre synchronisé vient d'être récupéré (appareil ou adresse neufs) :
+  // il ne reste qu'à le déverrouiller avec la phrase maître habituelle.
+  useEffect(() => {
+    if (status === "locked" && (mode === "create" || mode === "sync")) {
+      if (mode === "sync") toast.show("Coffre synchronisé récupéré", "success");
+      setMode("unlock");
+      setPassphrase("");
+      setConfirmPhrase("");
+      setError(null);
+    }
+  }, [status, mode, toast]);
 
   const reset = () => {
     setPassphrase("");
@@ -118,6 +135,23 @@ export function LockScreen() {
     }
   };
 
+  const onSyncSignIn = async () => {
+    setError(null);
+    setSigningIn(true);
+    try {
+      await sync.signIn(email.trim(), accountPassword);
+      setAccountPassword("");
+    } catch (e) {
+      setError(messageOf(e, "Connexion impossible."));
+    } finally {
+      setSigningIn(false);
+    }
+  };
+
+  // Connecté et synchronisé sans qu'aucun coffre ne soit arrivé : rien en ligne.
+  const noRemoteVault =
+    mode === "sync" && sync.authorized && sync.status === "synced" && status === "empty";
+
   const onDestroy = async () => {
     const ok = await confirm({
       title: "Réinitialiser le coffre local",
@@ -150,7 +184,9 @@ export function LockScreen() {
           <img src="/icons/logo-192.png" alt="" />
           <h1>JavaVault</h1>
           <p className="muted text-sm">
-            {status === "empty"
+            {mode === "sync"
+              ? "Récupérez votre coffre synchronisé."
+              : status === "empty"
               ? "Créez votre coffre personnel chiffré."
               : "Coffre verrouillé — entrez votre phrase maître."}
           </p>
@@ -209,6 +245,64 @@ export function LockScreen() {
             <button className="btn-primary" onClick={onUnlock} disabled={busy}>
               Déverrouiller
             </button>
+          </div>
+        )}
+
+        {mode === "sync" && (
+          <div className="stack">
+            {!sync.account ? (
+              <>
+                <p className="muted text-sm">
+                  Connectez-vous au compte de synchronisation pour récupérer le
+                  coffre chiffré. Vous le déverrouillerez ensuite avec votre
+                  phrase maître habituelle.
+                </p>
+                <div className="field">
+                  <label htmlFor="sync-email">E-mail</label>
+                  <input
+                    id="sync-email"
+                    type="email"
+                    value={email}
+                    autoComplete="username"
+                    autoFocus
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="vous@exemple.fr"
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="sync-pass">Mot de passe du compte</label>
+                  <PassphraseInput
+                    id="sync-pass"
+                    value={accountPassword}
+                    onChange={setAccountPassword}
+                    autoComplete="current-password"
+                    placeholder="Mot de passe Firebase (pas la phrase maître)"
+                    onEnter={onSyncSignIn}
+                  />
+                </div>
+                {error && <div className="inline-error">{error}</div>}
+                <button
+                  className="btn-primary"
+                  onClick={onSyncSignIn}
+                  disabled={signingIn || !email.trim() || !accountPassword}
+                >
+                  Se connecter et récupérer
+                </button>
+              </>
+            ) : !sync.authorized ? (
+              <div className="callout callout-danger text-sm">
+                Ce compte n'est pas autorisé à synchroniser ce coffre.
+              </div>
+            ) : sync.error ? (
+              <div className="inline-error">{sync.error}</div>
+            ) : noRemoteVault ? (
+              <div className="callout text-sm">
+                Aucun coffre synchronisé sur ce compte. Créez un coffre ou
+                restaurez un secours.
+              </div>
+            ) : (
+              <p className="muted text-sm">Récupération du coffre chiffré…</p>
+            )}
           </div>
         )}
 
@@ -273,6 +367,17 @@ export function LockScreen() {
               }}
             >
               Créer un coffre
+            </button>
+          )}
+          {mode !== "sync" && status === "empty" && sync.available && (
+            <button
+              className="btn-ghost btn-sm"
+              onClick={() => {
+                setMode("sync");
+                reset();
+              }}
+            >
+              Récupérer depuis la synchronisation
             </button>
           )}
           {mode !== "restore" && (

@@ -7,7 +7,7 @@ import { useConfirm } from "@/components/ConfirmProvider";
 import { useToast } from "@/components/ToastProvider";
 import { DownloadIcon } from "@/components/icons";
 import { serializeEnv } from "@/vault/envSerialize";
-import { downloadText } from "@/utils/download";
+import { backupFileName, downloadText } from "@/utils/download";
 import type { Project } from "@/vault/types";
 import type { BackupFile } from "@/vault/backup";
 
@@ -15,14 +15,6 @@ interface ExportModalProps {
   project: Project;
   onClose: () => void;
   onExportBackup: () => Promise<BackupFile>;
-}
-
-function timestamp(): string {
-  const d = new Date();
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(
-    d.getHours(),
-  )}${p(d.getMinutes())}`;
 }
 
 export function ExportModal({ project, onClose, onExportBackup }: ExportModalProps) {
@@ -76,7 +68,7 @@ export function ExportModal({ project, onClose, onExportBackup }: ExportModalPro
     try {
       const file = await onExportBackup();
       downloadText(
-        `javavault-secours-${timestamp()}.json`,
+        backupFileName(),
         JSON.stringify(file, null, 2),
         "application/json",
       );

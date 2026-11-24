@@ -9,13 +9,15 @@ import { useVault } from "@/vault/VaultContext";
 import { useSync } from "@/sync/SyncContext";
 import { AUTHORIZED_UID } from "@/firebase/config";
 import { APP_VERSION, BUILD_STAGE } from "@/config";
+import { DownloadIcon } from "@/components/icons";
+import { backupFileName, downloadText } from "@/utils/download";
 
 interface SettingsModalProps {
   onClose: () => void;
 }
 
 export function SettingsModal({ onClose }: SettingsModalProps) {
-  const { lock, destroy, revision, updatedAt } = useVault();
+  const { lock, destroy, revision, updatedAt, exportBackup } = useVault();
   const sync = useSync();
   const confirm = useConfirm();
   const toast = useToast();
@@ -36,6 +38,16 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
       setAuthError(e instanceof Error ? e.message : "Connexion impossible.");
     } finally {
       setAuthBusy(false);
+    }
+  };
+
+  const doExportBackup = async () => {
+    try {
+      const file = await exportBackup();
+      downloadText(backupFileName(), JSON.stringify(file, null, 2), "application/json");
+      toast.show("Export de secours chiffré téléchargé", "success");
+    } catch (e) {
+      toast.show(e instanceof Error ? e.message : "Export impossible.", "error");
     }
   };
 
@@ -184,6 +196,19 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
             </div>
           </>
         )}
+
+        <div className="section-sep" />
+
+        <h3 style={{ fontSize: "0.95rem" }}>Sauvegarde</h3>
+        <p className="muted text-sm">
+          Tout le coffre dans un fichier chiffré avec votre phrase maître,
+          restaurable sur un navigateur neuf (« Restaurer un secours »).
+        </p>
+        <button onClick={doExportBackup}>
+          <span className="row" style={{ gap: "0.4rem" }}>
+            <DownloadIcon /> Télécharger l'export de secours
+          </span>
+        </button>
 
         <div className="section-sep" />
 
